@@ -1,0 +1,145 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Seat Wind Assignment</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>Seat Wind Assignment</h1>
+            <p id="roundHeader">Round: East (東)</p>
+        </header>
+        
+        <main>
+            <div class="card">
+                <!-- Table Visualization -->
+                <div class="table-visualization">
+                    <div class="table-center">麻将</div>
+                    <!-- Player positions will be added by JavaScript -->
+                </div>
+                
+                <!-- Wind Assignments List -->
+                <div class="card" style="margin-top: 20px;">
+                    <h2 class="card-title">Wind Assignments</h2>
+                    <div id="assignmentsList">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                </div>
+                
+                <!-- Banker Note -->
+                <div class="info-note">
+                    <p id="bankerNote"></p>
+                </div>
+                
+                <button id="beginRoundButton" class="btn btn-primary">Begin Round 1</button>
+            </div>
+        </main>
+        
+        <footer class="footer">
+            <p>Mahjong Scorekeeper v1.0</p>
+        </footer>
+    </div>
+    
+    <script>
+        // Load game state from localStorage
+        const gameState = JSON.parse(localStorage.getItem('mahjongGameState') || '{}');
+        const players = gameState.players || [];
+        const currentRound = gameState.currentRound || { name: 'East', chinese: '東', number: 1, handNumber: 1 };
+        
+        // Update round header
+        document.getElementById('roundHeader').textContent = `Round: ${currentRound.name} (${currentRound.chinese})`;
+        document.getElementById('beginRoundButton').textContent = `Begin Round ${currentRound.handNumber}`;
+        
+        const tableVisualization = document.querySelector('.table-visualization');
+        const windPositions = {
+            'East': 'table-position-east',
+            'South': 'table-position-south',
+            'West': 'table-position-west',
+            'North': 'table-position-north'
+        };
+        
+        // Add players to table visualization
+        players.forEach(player => {
+            const playerPosition = document.createElement('div');
+            playerPosition.className = `table-position ${windPositions[player.wind]}`;
+            
+            const playerName = document.createElement('div');
+            playerName.className = 'player-name';
+            playerName.style.backgroundColor = player.isBanker ? '#ca8a04' : '#450a0a';
+            playerName.style.color = player.isBanker ? '#000' : '#fef9c3';
+            playerName.textContent = player.name;
+            
+            const playerWind = document.createElement('div');
+            playerWind.className = 'player-wind';
+            
+            const windText = document.createElement('span');
+            windText.textContent = player.wind;
+            
+            playerWind.appendChild(windText);
+            
+            if (player.isBanker) {
+                const bankerBadge = document.createElement('span');
+                bankerBadge.className = 'banker-badge';
+                bankerBadge.textContent = 'Banker';
+                bankerBadge.style.marginLeft = '5px';
+                playerWind.appendChild(bankerBadge);
+            }
+            
+            playerPosition.appendChild(playerName);
+            playerPosition.appendChild(playerWind);
+            tableVisualization.appendChild(playerPosition);
+        });
+        
+        // Display wind assignments
+        const assignmentsList = document.getElementById('assignmentsList');
+        
+        // Chinese characters for winds
+        const windChinese = {
+            'East': '東',
+            'South': '南',
+            'West': '西',
+            'North': '北'
+        };
+        
+        players.forEach(player => {
+            const row = document.createElement('div');
+            row.className = 'player-row';
+            row.style.backgroundColor = player.isBanker ? 'rgba(202, 138, 4, 0.2)' : 'rgba(127, 29, 29, 0.3)';
+            
+            row.innerHTML = `
+                <div class="player-info">
+                    <div style="display: inline-block; width: 30px; height: 30px; 
+                         background-color: ${player.isBanker ? '#ca8a04' : '#7f1d1d'}; 
+                         color: ${player.isBanker ? '#000' : '#fef9c3'};
+                         border-radius: 50%; text-align: center; line-height: 30px; 
+                         margin-right: 10px; font-weight: bold;">
+                        ${windChinese[player.wind]}
+                    </div>
+                    <span>${player.name}</span>
+                </div>
+                <div>
+                    <span>${player.wind}</span>
+                    ${player.isBanker ? '<span class="banker-badge">Banker</span>' : ''}
+                </div>
+            `;
+            assignmentsList.appendChild(row);
+        });
+        
+        // Set banker note
+        const banker = players.find(player => player.isBanker);
+        const bankerNote = document.getElementById('bankerNote');
+        
+        if (banker) {
+            bankerNote.innerHTML = `<strong>Note:</strong> The East wind player (${banker.name}) is the Banker for Round ${currentRound.handNumber}. The Banker role may change in later rounds based on gameplay outcomes.`;
+        }
+        
+        // Navigate to next screen
+        document.getElementById('beginRoundButton').addEventListener('click', function() {
+            window.location.href = 'choose-winner.html';
+        });
+    </script>
+</body>
+</html>

@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Results</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>Results</h1>
+            <p id="roundHeader">East Round - Hand 1</p>
+        </header>
+        
+        <main>
+            <div class="card">
+                <!-- Winner Section -->
+                <h2 class="card-title">Winner</h2>
+                <div id="winnerCard" class="winner-card">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+                
+                <!-- Points During Round -->
+                <h2 class="card-title">Round Points</h2>
+                <div id="roundPoints">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+                
+                <!-- Payouts -->
+                <h2 class="card-title">Payouts</h2>
+                <div id="payouts">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+                
+                <!-- Current Standings -->
+                <h2 class="card-title">Current Standings</h2>
+                <div class="card" style="background-color: rgba(0, 0, 0, 0.3); margin-bottom: 20px;">
+                    <table style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr style="border-bottom: 1px solid #713f12;">
+                                <th style="text-align: left; padding: 8px;">Rank</th>
+                                <th style="text-align: left; padding: 8px;">Player</th>
+                                <th style="text-align: right; padding: 8px;">Total Score</th>
+                            </tr>
+                        </thead>
+                        <tbody id="standingsTable">
+                            <!-- Will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Round History -->
+                <h2 class="card-title">Round History</h2>
+                <div id="roundHistory">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+                
+                <!-- Direct Points Recap -->
+                <h2 class="card-title">Direct Points Recap</h2>
+                <div class="card" style="background-color: rgba(0, 0, 0, 0.3); margin-bottom: 20px;">
+                    <div id="pointsRecap">
+                        <!-- Will be populated by JavaScript -->
+                    </div>
+                </div>
+                
+                <!-- Navigation Buttons -->
+                <button id="nextHandButton" class="btn btn-primary">Next Hand</button>
+                <button id="endGameButton" class="btn btn-secondary" style="margin-top: 10px;">End Game</button>
+            </div>
+        </main>
+        
+        <footer class="footer">
+            <p>Mahjong Scorekeeper v1.0</p>
+        </footer>
+    </div>
+    
+    <script>
+        // Load game state from localStorage
+        const gameState = JSON.parse(localStorage.getItem('mahjongGameState') || '{}');
+        const players = gameState.players || [];
+        const currentRound = gameState.currentRound || { name: 'East', chinese: '東', number: 1, handNumber: 1 };
+        const payouts = gameState.payouts || [];
+        const history = gameState.history || [];
+        const gameScore = gameState.gameScore || [];
+        
+        // Update round header
+        document.getElementById('roundHeader').textContent = `${currentRound.name} Round - Hand ${currentRound.handNumber}`;
+        
+        // Display winner
+        const winner = players.find(player => player.isWinner);
+        
+        if (winner) {
+            const winnerCard = document.getElementById('winnerCard');
+            winnerCard.innerHTML = `
+                <div class="winner-avatar">${winner.name.charAt(0)}</div>
+                <div class="winner-info">
+                    <div class="winner-name">${winner.name}</div>
+                    <div style="color: #fde047; font-size: 14px; display: flex; align-items: center;">
+                        ${winner.wind} Wind
+                        ${winner.isBanker ? '<span class="banker-badge" style="margin-left: 8px;">Banker</span>' : ''}
+                    </div>
+                </div>
+                <div class="winner-score">${winner.score}</div>
+            `;
+        }
+        
+        // Display round points
+        const roundPoints = document.getElementById('roundPoints');
+        
+        players.forEach(player => {
+            const row = document.createElement('div');
+            row.className = 'player-row';
+            row.style.backgroundColor = player.isWinner ? 'rgba(202, 138, 4, 0.2)' : 'rgba(127, 29, 29, 0.3)';
+            
+            row.innerHTML = `
+                <div class="player-info">
+                    <div style="display: inline-block; width: 30px; height: 30px; 
+                         background-color: ${player.isWinner ? '#ca8a04' : '#7f1d1d'}; 
+                         color: ${player.isWinner ? '#000' : '#fef9c3'};
+                         border-radius: 50%; text-align: center; line-height: 30px; 
+                         margin-right: 10px; font-weight: bold;">
+                        ${player.name.charAt(0)}
+                    </div>
+                    <span>${player.name}</span>
+                </div>
+                <div style="font-weight: bold; font-size: 18px;">${player.score}</div>
+            `;
+            
+            roundPoints.appendChild(row);
+        });
+        
+        // Display payouts
+        const payoutsContainer = document.getElementById('payouts');
+        
+        payouts.forEach(payout => {
+            const row = document.createElement('div');
+            row.className = 'payout-row';
+            
+            row.innerHTML = `
+                <div class="payout-from">${payout.from}</div>
+                <div class="payout-arrow">→</div>
+                <div class="payout-to">${payout.to}</div>
+                <div class="payout-amount">${payout.amount}</div>
+            `;
+            
+            payoutsContainer.appendChild(row);
+        });
+        
+        // Display current standings
+        const standingsTable = document.getElementById('standingsTable');
+        
+        // Sort by score descending
+        const sortedScores = [...gameScore].sort((a, b) => b.score - a.score);
+        
+        sortedScores.forEach((score, index) => {
+            const row = document.createElement('tr');
+            row.style.borderBottom = index < sortedScores.length - 1 ? '1px solid #713f12' : 'none';
+            
+            row.innerHTML = `
+                <td style="padding: 8px; font-weight: bold;">${index + 1}</td>
+                <td style="padding: 8px;">
+                    <div style="display: flex; align-items: center;">
+                        <div style="width: 24px; height: 24px; border-radius: 50%; 
+                             background-color: #7f1d1d; color: #fef9c3; 
+                             display: flex; align-items: center; justify-content: center;
+                             margin-right: 8px; font-size: 12px;">
+                            ${score.name.charAt(0)}
+                        </div>
+                        ${score.name}
+                    </div>
+                </td>
+                <td style="padding: 8px; text-align: right; font-weight: bold; color: ${score.score >= 0 ? '#fde047' : '#f87171'};">
+                    ${score.score >= 0 ? '+' : ''}${score.score}
+                </td>
+            `;
+            
+            standingsTable.appendChild(row);
+        });
+        
+        // Display round history
+        const roundHistory = document.getElementById('roundHistory');
+        
+        history.forEach(entry => {
+            const item = document.createElement('div');
+            item.className = 'history-item';
+            
+            item.innerHTML = `
+                <div class="history-header">
+                    <span>${entry.round} Round - Hand ${entry.hand}</span>
+                    <span>${entry.score} pts</span>
+                </div>
+                <div class="history-content">
+                    <strong>${entry.winner}</strong> wins ${entry.summary}
+                </div>
+            `;
+            
+            roundHistory.appendChild(item);
+        });
+        
+        // Display points recap
+        const pointsRecap = document.getElementById('pointsRecap');
+        
+        players.forEach(player => {
+            const row = document.createElement('div');
+            row.style.display = 'flex';
+            row.style.justifyContent = 'space-between';
+            row.style.padding = '8px 0';
+            row.style.borderBottom = '1px solid #713f12';
+            
+            row.innerHTML = `
+                <span>${player.name}</span>
+                <span style="font-weight: bold;">${player.score} (${player.scoreDetails?.totalBeforeRounding || player.score})</span>
+            `;
+            
+            pointsRecap.appendChild(row);
+        });
+        
+        // Handle next hand button
+        document.getElementById('nextHandButton').addEventListener('click', function() {
+            // Handle banker rotation and wind updates
+            updateGameStateForNextHand();
+            
+            // Save updated game state
+            localStorage.setItem('mahjongGameState', JSON.stringify(gameState));
+            
+            // Navigate to seat assignment for next hand
+            window.location.href = 'seat-assignment.html';
+        });
+        
+        // Handle end game button
+        document.getElementById('endGameButton').addEventListener('click', function() {
+            // Navigate to game recap
+            window.location.href = 'game-recap.html';
+        });
+        
+        // Update game state for next hand
+        function updateGameStateForNextHand() {
+            // Update hand number
+            gameState.currentRound.handNumber++;
+            
+            // Check if we need to change rounds
+            const bankerWon = winner.isBanker;
+            
+            if (!bankerWon) {
+                // Rotate banker position
+                const nextBanker = gameState.nextBanker;
+                
+                // Update player wind positions
+                rotateWinds();
+                
+                // Check if we've completed a round (all players have been banker)
+                const eastWindPlayer = players.find(p => p.wind === 'East');
+                
+                if (eastWindPlayer.name === players[0].name && gameState.currentRound.handNumber > 4) {
+                    // Move to next round
+                    const rounds = ['East', 'South', 'West', 'North'];
+                    const chineseWinds = ['東', '南', '西', '北'];
+                    const currentRoundIndex = rounds.indexOf(gameState.currentRound.name);
+                    
+                    if (currentRoundIndex < rounds.length - 1) {
+                        gameState.currentRound.name = rounds[currentRoundIndex + 1];
+                        gameState.currentRound.chinese = chineseWinds[currentRoundIndex + 1];
+                        gameState.currentRound.number++;
+                        gameState.currentRound.handNumber = 1;
+                    }
+                }
+            }
+            
+            // Reset player statuses
+            gameState.players.forEach(player => {
+                player.isWinner = false;
+                player.isDiscarder = false;
+                player.score = 0;
+                player.scoreDetails = null;
+            });
+            
+            // Reset current player index
+            gameState.currentPlayerIndex = 0;
+            
+            // Clear win info
+            gameState.winInfo = null;
+            
+            // Clear payouts
+            gameState.payouts = [];
+        }
+        
+        // Rotate wind positions
+        function rotateWinds() {
+            const winds = ['East', 'South', 'West', 'North'];
+            
+            // Get current wind assignments
+            const windAssignments = {};
+            players.forEach(player => {
+                windAssignments[player.name] = player.wind;
+            });
+            
+            // Rotate winds (each player gets the next wind)
+            players.forEach(player => {
+                const currentWindIndex = winds.indexOf(player.wind);
+                const nextWindIndex = (currentWindIndex + 1) % winds.length;
+                player.wind = winds[nextWindIndex];
+                player.isBanker = player.wind === 'East';
+            });
+        }
+    </script>
+</body>
+</html>

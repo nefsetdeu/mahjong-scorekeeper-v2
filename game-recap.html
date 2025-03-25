@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Game Recap</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1>Game Recap</h1>
+            <p id="gameStats">Completed Hands: 0</p>
+        </header>
+        
+        <main>
+            <div class="card">
+                <!-- Final Standings -->
+                <h2 class="card-title">Final Standings</h2>
+                <div id="finalStandings">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+                
+                <!-- History Summary -->
+                <h2 class="card-title">Game History</h2>
+                <div id="gameHistory" style="max-height: 300px; overflow-y: auto;">
+                    <!-- Will be populated by JavaScript -->
+                </div>
+                
+                <!-- New Game Button -->
+                <button id="newGameButton" class="btn btn-primary" style="margin-top: 30px;">New Game</button>
+            </div>
+        </main>
+        
+        <footer class="footer">
+            <p>Mahjong Scorekeeper v1.0</p>
+        </footer>
+    </div>
+    
+    <script>
+        // Load game state from localStorage
+        const gameState = JSON.parse(localStorage.getItem('mahjongGameState') || '{}');
+        const gameScore = gameState.gameScore || [];
+        const history = gameState.history || [];
+        
+        // Update game stats
+        document.getElementById('gameStats').textContent = `Completed Hands: ${history.length}`;
+        
+        // Display final standings
+        const finalStandings = document.getElementById('finalStandings');
+        
+        // Sort by score descending
+        const sortedScores = [...gameScore].sort((a, b) => b.score - a.score);
+        
+        // Add winner highlight
+        if (sortedScores.length > 0) {
+            const winner = document.createElement('div');
+            winner.className = 'winner-card';
+            winner.style.marginBottom = '20px';
+            
+            winner.innerHTML = `
+                <div class="winner-avatar" style="font-size: 28px;">${sortedScores[0].name.charAt(0)}</div>
+                <div class="winner-info">
+                    <div class="winner-name" style="font-size: 24px;">${sortedScores[0].name}</div>
+                    <div style="color: #fde047;">Game Winner</div>
+                </div>
+                <div class="winner-score">
+                    <div style="font-size: 28px; color: #fde047;">
+                        ${sortedScores[0].score >= 0 ? '+' : ''}${sortedScores[0].score}
+                    </div>
+                </div>
+            `;
+            
+            finalStandings.appendChild(winner);
+        }
+        
+        // Create standings table
+        const standingsTable = document.createElement('table');
+        standingsTable.style.width = '100%';
+        standingsTable.style.borderCollapse = 'collapse';
+        standingsTable.style.marginBottom = '20px';
+        
+        // Create table header
+        const tableHeader = document.createElement('thead');
+        tableHeader.innerHTML = `
+            <tr style="border-bottom: 1px solid #ca8a04;">
+                <th style="text-align: left; padding: 10px; color: #fde047;">Rank</th>
+                <th style="text-align: left; padding: 10px; color: #fde047;">Player</th>
+                <th style="text-align: right; padding: 10px; color: #fde047;">Final Score</th>
+            </tr>
+        `;
+        standingsTable.appendChild(tableHeader);
+        
+        // Create table body
+        const tableBody = document.createElement('tbody');
+        
+        sortedScores.forEach((score, index) => {
+            const row = document.createElement('tr');
+            row.style.borderBottom = index < sortedScores.length - 1 ? '1px solid #713f12' : 'none';
+            
+            // Highlight first place
+            if (index === 0) {
+                row.style.backgroundColor = 'rgba(202, 138, 4, 0.2)';
+            }
+            
+            row.innerHTML = `
+                <td style="padding: 12px; font-weight: bold; font-size: 18px;">${index + 1}</td>
+                <td style="padding: 12px; font-size: 16px;">
+                    <div style="display: flex; align-items: center;">
+                        <div style="width: 32px; height: 32px; border-radius: 50%; 
+                             background-color: ${index === 0 ? '#ca8a04' : '#7f1d1d'}; 
+                             color: ${index === 0 ? '#000' : '#fef9c3'}; 
+                             display: flex; align-items: center; justify-content: center;
+                             margin-right: 10px; font-size: 16px; font-weight: bold;">
+                            ${score.name.charAt(0)}
+                        </div>
+                        ${score.name}
+                    </div>
+                </td>
+                <td style="padding: 12px; text-align: right; font-weight: bold; font-size: 18px; 
+                    color: ${score.score >= 0 ? '#fde047' : '#f87171'};">
+                    ${score.score >= 0 ? '+' : ''}${score.score}
+                </td>
+            `;
+            
+            tableBody.appendChild(row);
+        });
+        
+        standingsTable.appendChild(tableBody);
+        finalStandings.appendChild(standingsTable);
+        
+        // Display game history
+        const gameHistory = document.getElementById('gameHistory');
+        
+        // Group history by rounds
+        const historyByRound = {};
+        
+        history.forEach(entry => {
+            if (!historyByRound[entry.round]) {
+                historyByRound[entry.round] = [];
+            }
+            historyByRound[entry.round].push(entry);
+        });
+        
+        // Display each round
+        Object.keys(historyByRound).forEach(round => {
+            const roundHeader = document.createElement('div');
+            roundHeader.style.padding = '10px';
+            roundHeader.style.backgroundColor = 'rgba(127, 29, 29, 0.5)';
+            roundHeader.style.borderRadius = '4px';
+            roundHeader.style.marginBottom = '10px';
+            roundHeader.style.fontWeight = 'bold';
+            roundHeader.style.color = '#fde047';
+            roundHeader.textContent = `${round} Round`;
+            
+            gameHistory.appendChild(roundHeader);
+            
+            historyByRound[round].forEach(entry => {
+                const item = document.createElement('div');
+                item.className = 'history-item';
+                
+                item.innerHTML = `
+                    <div class="history-header">
+                        <span>Hand ${entry.hand}</span>
+                        <span>${entry.score} pts</span>
+                    </div>
+                    <div class="history-content">
+                        <strong>${entry.winner}</strong> wins ${entry.summary}
+                    </div>
+                `;
+                
+                gameHistory.appendChild(item);
+            });
+        });
+        
+        // Handle new game button
+        document.getElementById('newGameButton').addEventListener('click', function() {
+            // Clear game state
+            localStorage.removeItem('mahjongGameState');
+            
+            // Navigate back to start screen
+            window.location.href = 'index.html';
+        });
+    </script>
+</body>
+</html>
